@@ -1,4 +1,4 @@
-*Ansible Mini Projects* 
+**Ansible Mini Projects**
 **Project 1: Install Java 21 and Jenkins using Ansible**  
 **Objective**  
 Automate the installation and configuration of Java 21 and Jenkins on  
