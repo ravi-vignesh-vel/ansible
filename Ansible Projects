@@ -1,0 +1,101 @@
+Ansible Projects
+Project 1: Install Java 21 and Jenkins using Ansible
+Objective
+Automate the installation and configuration of Java 21 and Jenkins on
+
+Ubuntu servers.
+Architecture
+Ansible Master
+
+|
+
+| SSH
+
+|
+
++-------------+    +-------------+
+
+|  Worker 1   |    |  Worker 2   |
+
+| Java 21     |    | Java 21     |
+
+| Jenkins     |    | Jenkins     |
+
++-------------+    +-------------+
+Prerequisites
+·	Ansible installed on control node
+·	Passwordless SSH or sudo access
+·	Ubuntu target servers
+·	Inventory file (inventroy.ini)
+Playbook Workflow
+1.	Update APT cache.
+2.	Install fontconfig and openjdk-21-jre.
+3.	Verify Java installation.
+4.	Create /etc/apt/keyrings.
+5.	Download the Jenkins GPG key.
+6.	Add the Jenkins APT repository.
+7.	Refresh package cache.
+8.	Install Jenkins.
+9.	Enable and start the Jenkins service.
+Run
+ansible-playbook -i inventroy.ini jenkins.yml --ask-become-pass
+
+Verification
+java -version
+systemctl status jenkins
+
+Access Jenkins:
+http://<server-ip>:8080
+
+Project 2: Deploy Docker Compose Application using Ansible
+Objective
+Install Docker, deploy an Nginx application using Docker Compose, and
+
+start it automatically.
+Architecture
+Ansible Master
+
+|
+
+| SSH
+
+|
+
++-------------+    +-------------+
+
+| Worker 1    |    | Worker 2    |
+
+| Docker      |    | Docker      |
+
+| Compose     |    | Compose     |
+
+| Nginx        |    | Nginx       |
+
++-------------+    +-------------+
+Files
+docker-compose.yml
+services:
+  web:
+    image: nginx:latest
+    container_name: nginx-web
+    ports:
+      - "8090:80"
+    restart: always
+
+deploy-docker-compose.yml
+The playbook: - Updates APT cache - Installs Docker and Docker Compose -
+
+Starts and enables Docker - Creates /opt/nginx-app - Copies
+
+docker-compose.yml - Executes docker compose up -d
+Run
+ansible-playbook -i inventroy.ini deploy-docker-compose.yml --ask-become-pass
+
+Verification
+docker ps
+docker compose ls
+curl http://localhost:8090
+
+Or access:
+http://<worker-ip>:8090
+
