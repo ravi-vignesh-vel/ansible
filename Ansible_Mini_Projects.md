@@ -1,79 +1,86 @@
-**Ansible Projects**  
+**Ansible Mini Projects**  
 **Project 1: Install Java 21 and Jenkins using Ansible**  
 **Objective**  
 Automate the installation and configuration of Java 21 and Jenkins on  
    
  Ubuntu servers.  
-**Architecture**  
-Ansible Master  
+**Installation Playbook**  
+---  
+ - name: Install Java 21 and Jenkins  
+   hosts: all  
+   become: true  
    
- |  
+   tasks:  
+     - name: Update apt cache  
+       ansible.builtin.apt:  
+         update_cache: true  
    
- | SSH  
+     - name: Install fontconfig and OpenJDK 21  
+       ansible.builtin.apt:  
+         name:  
+           - fontconfig  
+           - openjdk-21-jre  
+         state: present  
    
- |  
+     - name: Create apt keyrings directory  
+       ansible.builtin.file:  
+         path: /etc/apt/keyrings  
+         state: directory  
+         mode: '0755'  
    
- +-------------+    +-------------+  
+     - name: Download Jenkins GPG key  
+       ansible.builtin.get_url:  
+         url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key  
+         dest: /etc/apt/keyrings/jenkins-keyring.asc  
+         mode: '0644'  
    
- |  Worker 1   |    |  Worker 2   |  
+     - name: Add Jenkins repository  
+       ansible.builtin.copy:  
+         dest: /etc/apt/sources.list.d/jenkins.list  
+         content: |  
+           deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/  
    
- | Java 21     |    | Java 21     |  
+     - name: Update apt cache  
+       ansible.builtin.apt:  
+         update_cache: true  
    
- | Jenkins     |    | Jenkins     |  
+     - name: Install Jenkins  
+       ansible.builtin.apt:  
+         name: jenkins  
+         state: present  
    
- +-------------+    +-------------+  
-**Prerequisites**  
-- Ansible installed on control node  
-- Passwordless SSH or sudo access  
-- Ubuntu target servers  
-- Inventory file (inventroy.ini)  
-**Playbook Workflow**  
-1. Update APT cache.  
-2. Install fontconfig and openjdk-21-jre.  
-3. Verify Java installation.  
-4. Create /etc/apt/keyrings.  
-5. Download the Jenkins GPG key.  
-6. Add the Jenkins APT repository.  
-7. Refresh package cache.  
-8. Install Jenkins.  
-9. Enable and start the Jenkins service.  
-**Run**  
-ansible-playbook -i inventroy.ini jenkins.yml --ask-become-pass  
+     - name: Start Jenkins  
+       ansible.builtin.systemd:  
+         name: jenkins  
+         state: started  
+         enabled: true  
    
-**Verification**  
-java -version  
- systemctl status jenkins  
+**Uninstall Playbook**  
+---  
+ - name: Uninstall Java 21 and Jenkins  
+   hosts: all  
+   become: true  
    
-Access Jenkins:  
-http://<server-ip>:8080  
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANUlEQVR4nO3OMQ2AABAAsSPBCUZfEnoYmFDBhAU2QtIq6DIzW7UHAMBfnGt1V8fXEwAAXrse/wcF74lXkIsAAAAASUVORK5CYII=)  
-**Project 2: Deploy Docker Compose Application using Ansible**  
-**Objective**  
-Install Docker, deploy an Nginx application using Docker Compose, and  
+   tasks:  
+     - name: Update apt cache  
+       ansible.builtin.apt:  
+         update_cache: true  
    
- start it automatically.  
-**Architecture**  
-Ansible Master  
+     - name: Uninstall fontconfig and OpenJDK 21  
+       ansible.builtin.apt:  
+         name:  
+           - fontconfig  
+           - openjdk-21-jre  
+         state: absent  
    
- |  
+     - name: Uninstall Jenkins  
+       ansible.builtin.apt:  
+         name: jenkins  
+         state: absent  
    
- | SSH  
-   
- |  
-   
- +-------------+    +-------------+  
-   
- | Worker 1    |    | Worker 2    |  
-   
- | Docker      |    | Docker      |  
-   
- | Compose     |    | Compose     |  
-   
- | Nginx        |    | Nginx       |  
-   
- +-------------+    +-------------+  
-**Files**  
-***docker-compose.yml***  
+![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANUlEQVR4nO3OMQ2AABAAsSNhwgJWEPcbJpnRgQU2QtIq6DIze3UGAMBf3Gu1VcfXEwAAXrseaIkEMIPgIvAAAAAASUVORK5CYII=)  
+**Project 2: Deploy Docker Compose using Ansible**  
+**docker-compose.yml**  
 services:  
    web:  
      image: nginx:latest  
@@ -82,20 +89,85 @@ services:
        - "8090:80"  
      restart: always  
    
-***deploy-docker-compose.yml***  
-The playbook: - Updates APT cache - Installs Docker and Docker Compose -  
+**Deployment Playbook**  
+---  
+ - name: Deploy Docker Compose Application  
+   hosts: all  
+   become: true  
    
- Starts and enables Docker - Creates /opt/nginx-app - Copies  
+   tasks:  
+     - name: Update apt cache  
+       ansible.builtin.apt:  
+         update_cache: true  
    
- docker-compose.yml - Executes docker compose up -d  
-**Run**  
-ansible-playbook -i inventroy.ini deploy-docker-compose.yml --ask-become-pass  
+     - name: Install Docker  
+       ansible.builtin.apt:  
+         name:  
+           - docker.io  
+           - docker-compose-v2  
+         state: present  
+   
+     - name: Start Docker  
+       ansible.builtin.systemd:  
+         name: docker  
+         state: started  
+         enabled: true  
+   
+     - name: Create application directory  
+       ansible.builtin.file:  
+         path: /opt/nginx-app  
+         state: directory  
+   
+     - name: Copy docker compose file  
+       ansible.builtin.copy:  
+         src: docker-compose.yml  
+         dest: /opt/nginx-app/docker-compose.yml  
+   
+     - name: Deploy application  
+       ansible.builtin.command:  
+         cmd: docker compose up -d  
+         chdir: /opt/nginx-app  
+   
+**Cleanup / Uninstall Playbook**  
+---  
+ - name: Delete Docker Compose App  
+   hosts: all  
+   become: true  
+   
+   tasks:  
+     - name: Update apt cache  
+       ansible.builtin.apt:  
+         update_cache: true  
+   
+     - name: Stop and remove Docker Compose application  
+       ansible.builtin.command:  
+         cmd: docker compose down  
+         chdir: /opt/nginx-app  
+       ignore_errors: true  
+   
+     - name: Remove application directory  
+       ansible.builtin.file:  
+         path: /opt/nginx-app  
+         state: absent  
+   
+     - name: Uninstall packages  
+       ansible.builtin.apt:  
+         name:  
+           - docker.io  
+           - docker-compose-v2  
+         state: absent  
+   
+**Common Commands**  
+ansible-playbook -i inventroy.ini jenkins.yml --ask-become-pass  
+ ansible-playbook -i inventroy.ini uninstall-jenkins.yml --ask-become-pass  
+   
+ ansible-playbook -i inventroy.ini deploy-docker-compose.yml --ask-become-pass  
+ ansible-playbook -i inventroy.ini delete-docker-compose.yml --ask-become-pass  
    
 **Verification**  
-docker ps  
+java -version  
+ systemctl status jenkins  
+ docker ps  
  docker compose ls  
  curl http://localhost:8090  
    
-Or access:  
-http://<worker-ip>:8090  
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANElEQVR4nO3OUQmAABBAsSeIWMICprwEpjSIFfwTYUuwZWaO6goAgL+412qrzq8nAAC8tj8tdQNNdXaCdAAAAABJRU5ErkJggg==)  
